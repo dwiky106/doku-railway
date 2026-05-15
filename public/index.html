@@ -1,76 +1,269 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>DOKU Payment</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout Pembayaran</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .header {
+      background: linear-gradient(135deg, #d32f2f, #ff5252);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .product {
+      padding: 20px;
+      display: flex;
+      gap: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .product img {
+      width: 90px;
+      height: 90px;
+      border-radius: 12px;
+      object-fit: cover;
+    }
+
+    .product-info {
+      flex: 1;
+    }
+
+    .product-info h2 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .product-info p {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .price {
+      color: #d32f2f;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .form {
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #d32f2f;
+      box-shadow: 0 0 0 3px rgba(211,47,47,0.15);
+    }
+
+    .button {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      background: #d32f2f;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .button:hover {
+      background: #b71c1c;
+    }
+
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 999;
+      color: white;
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 6px solid rgba(255,255,255,0.2);
+      border-top: 6px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #888;
+      font-size: 13px;
+    }
+  </style>
 </head>
 <body>
 
-  <h1>DOKU Payment Test</h1>
+  <div class="container">
 
-  <input type="text" id="name" placeholder="Nama">
-  <br><br>
+    <div class="header">
+      <h1>Checkout Pembayaran</h1>
+      <p>Pembayaran aman dengan DOKU</p>
+    </div>
 
-  <input type="email" id="email" placeholder="Email">
-  <br><br>
+    <div class="product">
+      <img src="https://picsum.photos/200" alt="Produk" />
 
-  <input type="number" id="amount" placeholder="Amount">
-  <br><br>
+      <div class="product-info">
+        <h2>Produk Premium</h2>
+        <p>Produk digital berkualitas tinggi</p>
+        <div class="price">Rp 36.580</div>
+      </div>
+    </div>
 
-  <button onclick="pay()">
-    BAYAR
-  </button>
+    <div class="form">
+
+      <div class="form-group">
+        <label>Nama</label>
+        <input type="text" id="name" placeholder="Masukkan nama" />
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="Masukkan email" />
+      </div>
+
+      <button class="button" onclick="createPayment()">
+        Bayar Sekarang
+      </button>
+
+    </div>
+
+    <div class="footer">
+      Powered by Railway + DOKU
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <h2>Memproses Pembayaran...</h2>
+    <p>Mohon tunggu sebentar</p>
+  </div>
 
   <script>
 
-    async function pay() {
+    async function createPayment() {
 
-      const response = await fetch(
-        "http://localhost:3000/createPayment",
-        {
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+
+      if (!name || !email) {
+        alert("Lengkapi data terlebih dahulu");
+        return;
+      }
+
+      document.getElementById("loading").style.display = "flex";
+
+      try {
+
+        const response = await fetch("/createPayment", {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json"
           },
-
           body: JSON.stringify({
-
-            amount:
-              document.getElementById("amount").value,
-
-            invoice_number:
-              "INV-" + Date.now(),
-
-            customer_name:
-              document.getElementById("name").value,
-
-            customer_email:
-              document.getElementById("email").value
-
+            amount: 36580,
+            invoice_number: "INV-" + Date.now(),
+            customer_name: name,
+            customer_email: email
           })
+        });
 
+        const result = await response.json();
+
+        if (result.success) {
+          window.location.href = result.payment_url;
+        } else {
+          alert(result.message || "Gagal membuat pembayaran");
         }
-      );
 
-      const data = await response.json();
-
-      console.log(data);
-
-      if(data.payment_url){
-
-        window.location.href =
-          data.payment_url;
-
-      } else {
-
-        alert("Payment gagal");
-
+      } catch (error) {
+        console.log(error);
+        alert("Terjadi kesalahan server");
       }
 
+      document.getElementById("loading").style.display = "none";
     }
 
   </script>
 
 </body>
 </html>
-
