@@ -18,7 +18,9 @@ app.use(express.static("public"));
 |--------------------------------------------------------------------------
 */
 
-const serviceAccount = require("./payment-sekartaji-firebase-adminsdk-fbsvc-20a4d3e904.json");
+const serviceAccount = JSON.parse(
+  process.env.FIREBASE_SERVICE_ACCOUNT
+);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
