@@ -9,7 +9,10 @@ require("dotenv").config();
 const app = express();
 
 app.use(cors());
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(express.static("public"));
 
 /*
@@ -307,6 +310,13 @@ app.post("/createPayment", async (req, res) => {
 */
 
 app.post("/notification", async (req, res) => {
+
+  console.log("=== HEADERS ===");
+  console.log(req.headers);
+
+  console.log("=== BODY ===");
+  console.log(req.body);
+
   try {
 
     console.log("==================================");
