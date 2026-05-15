@@ -14,13 +14,54 @@ const app = express();
 |--------------------------------------------------------------------------
 */
 
+/*
+|--------------------------------------------------------------------------
+| CORS
+|--------------------------------------------------------------------------
+*/
+
 app.use(cors());
 
-app.use(express.json());
+/*
+|--------------------------------------------------------------------------
+| RAW BODY
+|--------------------------------------------------------------------------
+| Penting untuk webhook DOKU
+|--------------------------------------------------------------------------
+*/
+
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 
 app.use(express.urlencoded({
   extended: true,
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
 }));
+
+/*
+|--------------------------------------------------------------------------
+| HANDLE TEXT BODY
+|--------------------------------------------------------------------------
+*/
+
+app.use(express.text({
+  type: [
+    "text/plain",
+    "application/json",
+    "*/*"
+  ]
+}));
+
+/*
+|--------------------------------------------------------------------------
+| STATIC
+|--------------------------------------------------------------------------
+*/
 
 app.use(express.static("public"));
 
@@ -30,7 +71,10 @@ app.use(express.static("public"));
 |--------------------------------------------------------------------------
 */
 
-console.log("=== FIREBASE INIT ===");
+console.log("");
+console.log("==================================");
+console.log("FIREBASE INIT");
+console.log("==================================");
 
 const serviceAccount = JSON.parse(
   process.env.FIREBASE_SERVICE_ACCOUNT
@@ -67,9 +111,30 @@ const DOKU_URL =
 */
 
 app.get("/", (req, res) => {
+
   res.send(
     "DOKU Railway Backend Running"
   );
+});
+
+/*
+|--------------------------------------------------------------------------
+| HEALTH CHECK
+|--------------------------------------------------------------------------
+*/
+
+app.get("/health", (req, res) => {
+
+  return res.status(200).json({
+
+    success: true,
+
+    message:
+      "SERVER ACTIVE",
+
+    timestamp:
+      new Date().toISOString(),
+  });
 });
 
 /*
@@ -87,7 +152,21 @@ app.post("/createPayment", async (req, res) => {
     console.log("CREATE PAYMENT");
     console.log("==================================");
 
-    console.log(req.body);
+    console.log("");
+
+    console.log(
+      JSON.stringify(
+        req.body,
+        null,
+        2
+      )
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | REQUEST DATA
+    |--------------------------------------------------------------------------
+    */
 
     const {
       amount,
@@ -98,7 +177,7 @@ app.post("/createPayment", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | VALIDASI
+    | VALIDATION
     |--------------------------------------------------------------------------
     */
 
@@ -110,7 +189,9 @@ app.post("/createPayment", async (req, res) => {
     ) {
 
       return res.status(400).json({
+
         success: false,
+
         message:
           "Data pembayaran tidak lengkap",
       });
@@ -126,24 +207,29 @@ app.post("/createPayment", async (req, res) => {
 
       order: {
 
-        amount: Number(amount),
+        amount:
+          Number(amount),
 
         invoice_number:
           invoice_number,
 
-        currency: "IDR",
+        currency:
+          "IDR",
       },
 
       payment: {
 
-        payment_due_date: 60,
+        payment_due_date:
+          60,
       },
 
       customer: {
 
-        name: customer_name,
+        name:
+          customer_name,
 
-        email: customer_email,
+        email:
+          customer_email,
       },
 
       additional_info: {
@@ -157,7 +243,8 @@ app.post("/createPayment", async (req, res) => {
         callback_url_cancel:
           "https://doku-railway-production.up.railway.app",
 
-        auto_redirect: false,
+        auto_redirect:
+          false,
       },
     };
 
@@ -172,12 +259,18 @@ app.post("/createPayment", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | REQUEST ID & TIMESTAMP
+    | REQUEST ID
     |--------------------------------------------------------------------------
     */
 
     const requestId =
       crypto.randomUUID();
+
+    /*
+    |--------------------------------------------------------------------------
+    | TIMESTAMP
+    |--------------------------------------------------------------------------
+    */
 
     const timestamp =
       new Date()
@@ -203,10 +296,15 @@ app.post("/createPayment", async (req, res) => {
     */
 
     const componentSignature =
+
       `Client-Id:${CLIENT_ID}\n` +
+
       `Request-Id:${requestId}\n` +
+
       `Request-Timestamp:${timestamp}\n` +
+
       `Request-Target:/checkout/v1/payment\n` +
+
       `Digest:${digest}`;
 
     /*
@@ -259,6 +357,7 @@ app.post("/createPayment", async (req, res) => {
 
     console.log("");
     console.log("=== REQUEST BODY ===");
+
     console.log(
       JSON.stringify(
         requestBody,
@@ -269,7 +368,14 @@ app.post("/createPayment", async (req, res) => {
 
     console.log("");
     console.log("=== HEADERS ===");
-    console.log(headers);
+
+    console.log(
+      JSON.stringify(
+        headers,
+        null,
+        2
+      )
+    );
 
     /*
     |--------------------------------------------------------------------------
@@ -283,6 +389,12 @@ app.post("/createPayment", async (req, res) => {
         requestBody,
         { headers }
       );
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOG RESPONSE
+    |--------------------------------------------------------------------------
+    */
 
     console.log("");
     console.log("==================================");
@@ -333,11 +445,15 @@ app.post("/createPayment", async (req, res) => {
         status:
           "PENDING",
 
+        doku_response:
+          response.data,
+
         created_at:
           admin.firestore
           .FieldValue
           .serverTimestamp(),
-      });
+
+      }, { merge: true });
 
     console.log("");
     console.log("FIRESTORE SAVED");
@@ -415,7 +531,7 @@ app.post("/notification", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | LOG HEADERS
+    | HEADERS
     |--------------------------------------------------------------------------
     */
 
@@ -432,26 +548,56 @@ app.post("/notification", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | LOG BODY
+    | BODY
     |--------------------------------------------------------------------------
     */
 
     console.log("");
+    console.log("=== RAW BODY ===");
+
+    console.log(req.rawBody);
+
+    console.log("");
     console.log("=== BODY ===");
+
+    console.log(req.body);
+
+    /*
+    |--------------------------------------------------------------------------
+    | PARSE BODY
+    |--------------------------------------------------------------------------
+    */
+
+    let body = req.body;
+
+    if (typeof body === "string") {
+
+      try {
+
+        body = JSON.parse(body);
+
+      } catch (e) {
+
+        console.log(
+          "BODY BUKAN JSON"
+        );
+      }
+    }
+
+    console.log("");
+    console.log("=== PARSED BODY ===");
 
     console.log(
       JSON.stringify(
-        req.body,
+        body,
         null,
         2
       )
     );
 
-    const body = req.body;
-
     /*
     |--------------------------------------------------------------------------
-    | AMBIL DATA
+    | GET DATA
     |--------------------------------------------------------------------------
     */
 
@@ -464,6 +610,9 @@ app.post("/notification", async (req, res) => {
       body?.virtual_account_info
       ?.invoice_number ||
 
+      body?.virtual_account_info
+      ?.trx_id ||
+
       null;
 
     const transactionStatus =
@@ -473,6 +622,8 @@ app.post("/notification", async (req, res) => {
       body?.transaction_status ||
 
       body?.status ||
+
+      body?.transaction?.state ||
 
       "SUCCESS";
 
@@ -486,12 +637,13 @@ app.post("/notification", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | VALIDASI
+    | VALIDATION
     |--------------------------------------------------------------------------
     */
 
     if (!invoiceNumber) {
 
+      console.log("");
       console.log(
         "INVOICE NUMBER TIDAK ADA"
       );
@@ -516,31 +668,62 @@ app.post("/notification", async (req, res) => {
       transactionStatus
     );
 
+    console.log(
+      "AMOUNT:",
+      amount
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK DOC
+    |--------------------------------------------------------------------------
+    */
+
+    const docRef =
+      db.collection("transactions")
+      .doc(invoiceNumber);
+
+    const docSnap =
+      await docRef.get();
+
+    console.log("");
+    console.log(
+      "DOC EXISTS:",
+      docSnap.exists
+    );
+
     /*
     |--------------------------------------------------------------------------
     | UPDATE FIRESTORE
     |--------------------------------------------------------------------------
     */
 
-    await db
-      .collection("transactions")
-      .doc(invoiceNumber)
-      .update({
+    await docRef.set({
 
-        status:
-          transactionStatus,
+      invoice_number:
+        invoiceNumber,
 
-        paid_amount:
-          Number(amount),
+      status:
+        transactionStatus,
 
-        webhook_response:
-          body,
+      paid_amount:
+        Number(amount),
 
-        updated_at:
-          admin.firestore
-          .FieldValue
-          .serverTimestamp(),
-      });
+      webhook_response:
+        body,
+
+      webhook_headers:
+        req.headers,
+
+      webhook_received:
+        true,
+
+      updated_at:
+        admin.firestore
+        .FieldValue
+        .serverTimestamp(),
+
+    }, { merge: true });
 
     console.log("");
     console.log("==================================");
@@ -549,7 +732,7 @@ app.post("/notification", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | SUCCESS RESPONSE
+    | RESPONSE
     |--------------------------------------------------------------------------
     */
 
@@ -585,6 +768,9 @@ app.post("/notification", async (req, res) => {
 
 app.get("/notification", (req, res) => {
 
+  console.log("");
+  console.log("GET NOTIFICATION HIT");
+
   res.send(
     "WEBHOOK ACTIVE"
   );
@@ -611,6 +797,58 @@ app.post("/test-webhook", (req, res) => {
 
     body: req.body,
   });
+});
+
+/*
+|--------------------------------------------------------------------------
+| GET TRANSACTION
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  "/transaction/:invoice",
+  async (req, res) => {
+
+  try {
+
+    const invoice =
+      req.params.invoice;
+
+    const doc =
+      await db
+      .collection("transactions")
+      .doc(invoice)
+      .get();
+
+    if (!doc.exists) {
+
+      return res.status(404).json({
+
+        success: false,
+
+        message:
+          "Transaction not found",
+      });
+    }
+
+    return res.status(200).json({
+
+      success: true,
+
+      data:
+        doc.data(),
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+
+      success: false,
+
+      message:
+        error.message,
+    });
+  }
 });
 
 /*
