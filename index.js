@@ -8,10 +8,19 @@ require("dotenv").config();
 
 const app = express();
 
+/*
+|--------------------------------------------------------------------------
+| MIDDLEWARE
+|--------------------------------------------------------------------------
+*/
+
 app.use(cors());
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+app.use(express.urlencoded({
+  extended: true,
+}));
 
 app.use(express.static("public"));
 
@@ -21,17 +30,20 @@ app.use(express.static("public"));
 |--------------------------------------------------------------------------
 */
 
-console.log(process.env.FIREBASE_SERVICE_ACCOUNT);
+console.log("=== FIREBASE INIT ===");
 
 const serviceAccount = JSON.parse(
   process.env.FIREBASE_SERVICE_ACCOUNT
 );
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential:
+    admin.credential.cert(serviceAccount),
 });
 
 const db = admin.firestore();
+
+console.log("FIREBASE CONNECTED");
 
 /*
 |--------------------------------------------------------------------------
@@ -39,20 +51,25 @@ const db = admin.firestore();
 |--------------------------------------------------------------------------
 */
 
-const CLIENT_ID = process.env.DOKU_CLIENT_ID;
-const SECRET_KEY = process.env.DOKU_SECRET_KEY;
+const CLIENT_ID =
+  process.env.DOKU_CLIENT_ID;
+
+const SECRET_KEY =
+  process.env.DOKU_SECRET_KEY;
 
 const DOKU_URL =
   "https://api.doku.com/checkout/v1/payment";
 
 /*
 |--------------------------------------------------------------------------
-| TEST ROUTE
+| ROOT
 |--------------------------------------------------------------------------
 */
 
 app.get("/", (req, res) => {
-  res.send("DOKU Railway Backend Running");
+  res.send(
+    "DOKU Railway Backend Running"
+  );
 });
 
 /*
@@ -62,9 +79,14 @@ app.get("/", (req, res) => {
 */
 
 app.post("/createPayment", async (req, res) => {
+
   try {
 
-    console.log("=== CREATE PAYMENT REQUEST ===");
+    console.log("");
+    console.log("==================================");
+    console.log("CREATE PAYMENT");
+    console.log("==================================");
+
     console.log(req.body);
 
     const {
@@ -76,41 +98,68 @@ app.post("/createPayment", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
+    | VALIDASI
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !amount ||
+      !invoice_number ||
+      !customer_name ||
+      !customer_email
+    ) {
+
+      return res.status(400).json({
+        success: false,
+        message:
+          "Data pembayaran tidak lengkap",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | REQUEST BODY
     |--------------------------------------------------------------------------
     */
 
     const requestBody = {
-  order: {
-    amount: Number(amount),
 
-    invoice_number: invoice_number,
+      order: {
 
-    currency: "IDR",
-  },
+        amount: Number(amount),
 
-  payment: {
-    payment_due_date: 60,
-  },
+        invoice_number:
+          invoice_number,
 
-  customer: {
-    name: customer_name,
-    email: customer_email,
-  },
+        currency: "IDR",
+      },
 
-  additional_info: {
-    callback_url:
-      "https://doku-railway-production.up.railway.app/notification",
+      payment: {
 
-    callback_url_cancel:
-      "https://doku-railway-production.up.railway.app",
+        payment_due_date: 60,
+      },
 
-    callback_url_result:
-      "https://doku-railway-production.up.railway.app",
+      customer: {
 
-    auto_redirect: false,
-  },
-};
+        name: customer_name,
+
+        email: customer_email,
+      },
+
+      additional_info: {
+
+        callback_url:
+          "https://doku-railway-production.up.railway.app/notification",
+
+        callback_url_result:
+          "https://doku-railway-production.up.railway.app",
+
+        callback_url_cancel:
+          "https://doku-railway-production.up.railway.app",
+
+        auto_redirect: false,
+      },
+    };
 
     /*
     |--------------------------------------------------------------------------
@@ -121,19 +170,17 @@ app.post("/createPayment", async (req, res) => {
     const bodyString =
       JSON.stringify(requestBody);
 
-    console.log("=== BODY STRING ===");
-    console.log(bodyString);
-
     /*
     |--------------------------------------------------------------------------
-    | HEADERS
+    | REQUEST ID & TIMESTAMP
     |--------------------------------------------------------------------------
     */
 
     const requestId =
       crypto.randomUUID();
 
-    const timestamp = new Date()
+    const timestamp =
+      new Date()
       .toISOString()
       .replace(/\.\d{3}Z$/, "Z");
 
@@ -143,13 +190,11 @@ app.post("/createPayment", async (req, res) => {
     |--------------------------------------------------------------------------
     */
 
-    const digest = crypto
+    const digest =
+      crypto
       .createHash("sha256")
       .update(bodyString)
       .digest("base64");
-
-    console.log("=== DIGEST ===");
-    console.log(digest);
 
     /*
     |--------------------------------------------------------------------------
@@ -164,28 +209,20 @@ app.post("/createPayment", async (req, res) => {
       `Request-Target:/checkout/v1/payment\n` +
       `Digest:${digest}`;
 
-    console.log(
-      "=== COMPONENT SIGNATURE ==="
-    );
-
-    console.log(componentSignature);
-
     /*
     |--------------------------------------------------------------------------
     | SIGNATURE
     |--------------------------------------------------------------------------
     */
 
-    const signature = crypto
+    const signature =
+      crypto
       .createHmac(
         "sha256",
         SECRET_KEY
       )
       .update(componentSignature)
       .digest("base64");
-
-    console.log("=== SIGNATURE ===");
-    console.log(signature);
 
     /*
     |--------------------------------------------------------------------------
@@ -194,22 +231,43 @@ app.post("/createPayment", async (req, res) => {
     */
 
     const headers = {
+
       "Content-Type":
         "application/json",
 
-      "Client-Id": CLIENT_ID,
+      "Client-Id":
+        CLIENT_ID,
 
-      "Request-Id": requestId,
+      "Request-Id":
+        requestId,
 
       "Request-Timestamp":
         timestamp,
 
-      Digest: digest,
+      Digest:
+        digest,
 
       Signature:
         `HMACSHA256=${signature}`,
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | LOG REQUEST
+    |--------------------------------------------------------------------------
+    */
+
+    console.log("");
+    console.log("=== REQUEST BODY ===");
+    console.log(
+      JSON.stringify(
+        requestBody,
+        null,
+        2
+      )
+    );
+
+    console.log("");
     console.log("=== HEADERS ===");
     console.log(headers);
 
@@ -226,6 +284,7 @@ app.post("/createPayment", async (req, res) => {
         { headers }
       );
 
+    console.log("");
     console.log("==================================");
     console.log("DOKU SUCCESS");
     console.log("==================================");
@@ -240,6 +299,16 @@ app.post("/createPayment", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
+    | PAYMENT URL
+    |--------------------------------------------------------------------------
+    */
+
+    const paymentUrl =
+      response.data.response
+      .payment.url;
+
+    /*
+    |--------------------------------------------------------------------------
     | SAVE TO FIRESTORE
     |--------------------------------------------------------------------------
     */
@@ -248,23 +317,30 @@ app.post("/createPayment", async (req, res) => {
       .collection("transactions")
       .doc(invoice_number)
       .set({
+
         invoice_number,
 
-        amount,
+        amount:
+          Number(amount),
 
         customer_name,
 
         customer_email,
 
         payment_url:
-          response.data.response
-            .payment.url,
+          paymentUrl,
 
-        status: "PENDING",
+        status:
+          "PENDING",
 
         created_at:
-          admin.firestore.FieldValue.serverTimestamp(),
+          admin.firestore
+          .FieldValue
+          .serverTimestamp(),
       });
+
+    console.log("");
+    console.log("FIRESTORE SAVED");
 
     /*
     |--------------------------------------------------------------------------
@@ -273,40 +349,54 @@ app.post("/createPayment", async (req, res) => {
     */
 
     return res.status(200).json({
+
       success: true,
 
       payment_url:
-        response.data.response
-          .payment.url,
-
-      data: response.data,
+        paymentUrl,
     });
 
   } catch (error) {
 
-    console.log("=== ERROR ===");
+    console.log("");
+    console.log("==================================");
+    console.log("CREATE PAYMENT ERROR");
+    console.log("==================================");
 
     if (error.response) {
 
-      console.log(error.response.data);
+      console.log(
+        JSON.stringify(
+          error.response.data,
+          null,
+          2
+        )
+      );
 
-      return res.status(
+      return res
+      .status(
         error.response.status
-      ).json({
+      )
+      .json({
+
         success: false,
-        error: error.response.data,
+
+        error:
+          error.response.data,
       });
     }
 
     console.log(error);
 
     return res.status(500).json({
+
       success: false,
-      message: error.message,
+
+      message:
+        error.message,
     });
   }
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -316,19 +406,46 @@ app.post("/createPayment", async (req, res) => {
 
 app.post("/notification", async (req, res) => {
 
-  console.log("=== HEADERS ===");
-  console.log(req.headers);
-
-  console.log("=== BODY ===");
-  console.log(req.body);
-
   try {
 
+    console.log("");
     console.log("==================================");
-    console.log("DOKU WEBHOOK");
+    console.log("WEBHOOK MASUK");
     console.log("==================================");
 
-    console.log(JSON.stringify(req.body, null, 2));
+    /*
+    |--------------------------------------------------------------------------
+    | LOG HEADERS
+    |--------------------------------------------------------------------------
+    */
+
+    console.log("");
+    console.log("=== HEADERS ===");
+
+    console.log(
+      JSON.stringify(
+        req.headers,
+        null,
+        2
+      )
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOG BODY
+    |--------------------------------------------------------------------------
+    */
+
+    console.log("");
+    console.log("=== BODY ===");
+
+    console.log(
+      JSON.stringify(
+        req.body,
+        null,
+        2
+      )
+    );
 
     const body = req.body;
 
@@ -339,13 +456,33 @@ app.post("/notification", async (req, res) => {
     */
 
     const invoiceNumber =
-      body?.order?.invoice_number;
+
+      body?.order?.invoice_number ||
+
+      body?.invoice_number ||
+
+      body?.virtual_account_info
+      ?.invoice_number ||
+
+      null;
 
     const transactionStatus =
-      body?.transaction?.status;
+
+      body?.transaction?.status ||
+
+      body?.transaction_status ||
+
+      body?.status ||
+
+      "SUCCESS";
 
     const amount =
-      body?.order?.amount;
+
+      body?.order?.amount ||
+
+      body?.amount ||
+
+      0;
 
     /*
     |--------------------------------------------------------------------------
@@ -354,11 +491,30 @@ app.post("/notification", async (req, res) => {
     */
 
     if (!invoiceNumber) {
+
+      console.log(
+        "INVOICE NUMBER TIDAK ADA"
+      );
+
       return res.status(400).json({
+
         success: false,
-        message: "Invoice number kosong",
+
+        message:
+          "Invoice number kosong",
       });
     }
+
+    console.log("");
+    console.log(
+      "INVOICE:",
+      invoiceNumber
+    );
+
+    console.log(
+      "STATUS:",
+      transactionStatus
+    );
 
     /*
     |--------------------------------------------------------------------------
@@ -370,17 +526,23 @@ app.post("/notification", async (req, res) => {
       .collection("transactions")
       .doc(invoiceNumber)
       .update({
-        transaction_status:
-          transactionStatus || "UNKNOWN",
 
-        paid_amount: amount || 0,
+        status:
+          transactionStatus,
 
-        webhook_response: body,
+        paid_amount:
+          Number(amount),
+
+        webhook_response:
+          body,
 
         updated_at:
-          admin.firestore.FieldValue.serverTimestamp(),
+          admin.firestore
+          .FieldValue
+          .serverTimestamp(),
       });
 
+    console.log("");
     console.log("==================================");
     console.log("FIRESTORE UPDATED");
     console.log("==================================");
@@ -392,11 +554,13 @@ app.post("/notification", async (req, res) => {
     */
 
     return res.status(200).json({
+
       success: true,
     });
 
   } catch (error) {
 
+    console.log("");
     console.log("==================================");
     console.log("WEBHOOK ERROR");
     console.log("==================================");
@@ -404,12 +568,14 @@ app.post("/notification", async (req, res) => {
     console.log(error);
 
     return res.status(500).json({
+
       success: false,
-      message: error.message,
+
+      message:
+        error.message,
     });
   }
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -418,10 +584,34 @@ app.post("/notification", async (req, res) => {
 */
 
 app.get("/notification", (req, res) => {
-  res.send("WEBHOOK ACTIVE");
+
+  res.send(
+    "WEBHOOK ACTIVE"
+  );
 });
 
+/*
+|--------------------------------------------------------------------------
+| TEST POST WEBHOOK
+|--------------------------------------------------------------------------
+*/
 
+app.post("/test-webhook", (req, res) => {
+
+  console.log("");
+  console.log("==================================");
+  console.log("TEST WEBHOOK HIT");
+  console.log("==================================");
+
+  console.log(req.body);
+
+  return res.json({
+
+    success: true,
+
+    body: req.body,
+  });
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -433,8 +623,13 @@ const PORT =
   process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(
-    `Server running on port ${PORT}`
-  );
-});
 
+  console.log("");
+  console.log("==================================");
+
+  console.log(
+    `SERVER RUNNING ON PORT ${PORT}`
+  );
+
+  console.log("==================================");
+});
