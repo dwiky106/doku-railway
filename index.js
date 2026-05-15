@@ -86,10 +86,10 @@ app.post("/createPayment", async (req, res) => {
         currency: "IDR",
 
         callback_url:
-          "https://yourdomain.com/callback",
+          "https://doku-railway-production.up.railway.app/notification",
 
         callback_url_result:
-          "https://yourdomain.com/result",
+          "https://doku-railway-production.up.railway.app",
 
         auto_redirect: false,
       },
