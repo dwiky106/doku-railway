@@ -784,46 +784,71 @@
 
     async function validatePayment(invoice){
 
-      try{
+  try{
 
-        const button =
-          event.target;
+    const button =
+      event.target;
 
-        button.innerHTML =
-          "Checking...";
+    button.innerHTML =
+      "Checking...";
 
-        button.disabled = true;
+    button.disabled = true;
 
-        const response =
-          await fetch(
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK STATUS FROM DOKU
+    |--------------------------------------------------------------------------
+    */
 
-            `${API_BASE}/validate-payment/${invoice}`,
+    const response =
+      await fetch(
+        `${API_BASE}/check-status/${invoice}`
+      );
 
-            {
-              method:"POST"
-            }
-          );
+    const result =
+      await response.json();
 
-        const result =
-          await response.json();
+    console.log(result);
 
-        console.log(result);
+    /*
+    |--------------------------------------------------------------------------
+    | RELOAD TRANSACTION
+    |--------------------------------------------------------------------------
+    */
 
-        await loadTransactions();
+    await loadTransactions();
 
-        button.innerHTML =
-          "Validate";
+    /*
+    |--------------------------------------------------------------------------
+    | SUCCESS
+    |--------------------------------------------------------------------------
+    */
 
-        button.disabled = false;
+    if(result.success){
 
-      }catch(error){
+      button.innerHTML =
+        "Validated";
 
-        console.log(error);
+    }else{
 
-        alert(
-          "Validation failed"
-        );
-      }
+      button.innerHTML =
+        "Validate";
+
+      alert(
+        "Validation failed"
+      );
+    }
+
+    button.disabled = false;
+
+  }catch(error){
+
+    console.log(error);
+
+    alert(
+      "Validation failed"
+    );
+  }
     }
 
     /*
