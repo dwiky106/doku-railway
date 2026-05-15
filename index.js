@@ -45,7 +45,7 @@ app.use(express.urlencoded({
 
 /*
 |--------------------------------------------------------------------------
-| HANDLE TEXT BODY
+| TEXT BODY
 |--------------------------------------------------------------------------
 */
 
@@ -153,7 +153,6 @@ app.post("/createPayment", async (req, res) => {
     console.log("==================================");
 
     console.log("");
-
     console.log(
       JSON.stringify(
         req.body,
@@ -234,17 +233,36 @@ app.post("/createPayment", async (req, res) => {
 
       additional_info: {
 
-  notification_url:
-    "https://doku-railway-production.up.railway.app/notification",
+        /*
+        |--------------------------------------------------------------------------
+        | notification_url = webhook backend
+        |--------------------------------------------------------------------------
+        */
 
-  callback_url:
-    "https://doku-railway-production.up.railway.app",
+        notification_url:
+          "https://doku-railway-production.up.railway.app/notification",
 
-  callback_url_cancel:
-    "https://doku-railway-production.up.railway.app",
+        /*
+        |--------------------------------------------------------------------------
+        | callback_url = redirect browser setelah bayar
+        |--------------------------------------------------------------------------
+        */
 
-  auto_redirect: false,
-},
+        callback_url:
+          "https://doku-railway-production.up.railway.app",
+
+        /*
+        |--------------------------------------------------------------------------
+        | callback cancel
+        |--------------------------------------------------------------------------
+        */
+
+        callback_url_cancel:
+          "https://doku-railway-production.up.railway.app",
+
+        auto_redirect:
+          false,
+      },
     };
 
     /*
@@ -420,7 +438,7 @@ app.post("/createPayment", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | SAVE TO FIRESTORE
+    | SAVE FIRESTORE
     |--------------------------------------------------------------------------
     */
 
@@ -446,6 +464,9 @@ app.post("/createPayment", async (req, res) => {
 
         doku_response:
           response.data,
+
+        webhook_received:
+          false,
 
         created_at:
           admin.firestore
@@ -547,7 +568,7 @@ app.post("/notification", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | BODY
+    | RAW BODY
     |--------------------------------------------------------------------------
     */
 
@@ -555,6 +576,12 @@ app.post("/notification", async (req, res) => {
     console.log("=== RAW BODY ===");
 
     console.log(req.rawBody);
+
+    /*
+    |--------------------------------------------------------------------------
+    | BODY
+    |--------------------------------------------------------------------------
+    */
 
     console.log("");
     console.log("=== BODY ===");
@@ -582,6 +609,12 @@ app.post("/notification", async (req, res) => {
         );
       }
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PARSED BODY
+    |--------------------------------------------------------------------------
+    */
 
     console.log("");
     console.log("=== PARSED BODY ===");
@@ -656,6 +689,38 @@ app.post("/notification", async (req, res) => {
       });
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | FINAL STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    let finalStatus =
+      "PENDING";
+
+    if (
+      transactionStatus === "SUCCESS" ||
+      transactionStatus === "PAID"
+    ) {
+
+      finalStatus =
+        "PAID";
+    }
+
+    if (
+      transactionStatus === "FAILED"
+    ) {
+
+      finalStatus =
+        "FAILED";
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOG
+    |--------------------------------------------------------------------------
+    */
+
     console.log("");
     console.log(
       "INVOICE:",
@@ -668,19 +733,30 @@ app.post("/notification", async (req, res) => {
     );
 
     console.log(
+      "FINAL STATUS:",
+      finalStatus
+    );
+
+    console.log(
       "AMOUNT:",
       amount
     );
 
     /*
     |--------------------------------------------------------------------------
-    | CHECK DOC
+    | FIRESTORE REF
     |--------------------------------------------------------------------------
     */
 
     const docRef =
       db.collection("transactions")
       .doc(invoiceNumber);
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK DOC
+    |--------------------------------------------------------------------------
+    */
 
     const docSnap =
       await docRef.get();
@@ -703,19 +779,22 @@ app.post("/notification", async (req, res) => {
         invoiceNumber,
 
       status:
+        finalStatus,
+
+      doku_status:
         transactionStatus,
 
       paid_amount:
         Number(amount),
+
+      webhook_received:
+        true,
 
       webhook_response:
         body,
 
       webhook_headers:
         req.headers,
-
-      webhook_received:
-        true,
 
       updated_at:
         admin.firestore
@@ -731,7 +810,7 @@ app.post("/notification", async (req, res) => {
 
     /*
     |--------------------------------------------------------------------------
-    | RESPONSE
+    | SUCCESS RESPONSE
     |--------------------------------------------------------------------------
     */
 
@@ -761,7 +840,7 @@ app.post("/notification", async (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
-| TEST WEBHOOK
+| TEST GET WEBHOOK
 |--------------------------------------------------------------------------
 */
 
@@ -808,47 +887,145 @@ app.get(
   "/transaction/:invoice",
   async (req, res) => {
 
-  try {
+    try {
 
-    const invoice =
-      req.params.invoice;
+      const invoice =
+        req.params.invoice;
 
-    const doc =
-      await db
-      .collection("transactions")
-      .doc(invoice)
-      .get();
+      const doc =
+        await db
+        .collection("transactions")
+        .doc(invoice)
+        .get();
 
-    if (!doc.exists) {
+      if (!doc.exists) {
 
-      return res.status(404).json({
+        return res.status(404).json({
+
+          success: false,
+
+          message:
+            "Transaction not found",
+        });
+      }
+
+      return res.status(200).json({
+
+        success: true,
+
+        data:
+          doc.data(),
+      });
+
+    } catch (error) {
+
+      return res.status(500).json({
 
         success: false,
 
         message:
-          "Transaction not found",
+          error.message,
       });
     }
-
-    return res.status(200).json({
-
-      success: true,
-
-      data:
-        doc.data(),
-    });
-
-  } catch (error) {
-
-    return res.status(500).json({
-
-      success: false,
-
-      message:
-        error.message,
-    });
   }
-});
+);
+
+/*
+|--------------------------------------------------------------------------
+| ALL TRANSACTIONS
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  "/transactions",
+  async (req, res) => {
+
+    try {
+
+      const snapshot =
+        await db
+        .collection("transactions")
+        .orderBy(
+          "created_at",
+          "desc"
+        )
+        .get();
+
+      const data = [];
+
+      snapshot.forEach((doc) => {
+
+        data.push({
+
+          id: doc.id,
+
+          ...doc.data(),
+        });
+      });
+
+      return res.status(200).json({
+
+        success: true,
+
+        total:
+          data.length,
+
+        data,
+      });
+
+    } catch (error) {
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          error.message,
+      });
+    }
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| DELETE TRANSACTION
+|--------------------------------------------------------------------------
+*/
+
+app.delete(
+  "/transaction/:invoice",
+  async (req, res) => {
+
+    try {
+
+      const invoice =
+        req.params.invoice;
+
+      await db
+        .collection("transactions")
+        .doc(invoice)
+        .delete();
+
+      return res.status(200).json({
+
+        success: true,
+
+        message:
+          "Transaction deleted",
+      });
+
+    } catch (error) {
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          error.message,
+      });
+    }
+  }
+);
 
 /*
 |--------------------------------------------------------------------------
