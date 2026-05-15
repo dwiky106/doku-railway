@@ -183,9 +183,9 @@
       <img src="https://picsum.photos/200" alt="Produk" />
 
       <div class="product-info">
-        <h2>Produk Premium</h2>
-        <p>Produk digital berkualitas tinggi</p>
-        <div class="price">Rp 36.580</div>
+        <h2>Pembayaran Online</h2>
+        <p>Masukkan nominal pembayaran sesuai kebutuhan Anda</p>
+        <div class="price">Pembayaran Fleksibel</div>
       </div>
     </div>
 
@@ -199,6 +199,11 @@
       <div class="form-group">
         <label>Email</label>
         <input type="email" id="email" placeholder="Masukkan email" />
+      </div>
+
+      <div class="form-group">
+        <label>Nominal Pembayaran</label>
+        <input type="number" id="amount" placeholder="Masukkan nominal pembayaran" />
       </div>
 
       <button class="button" onclick="createPayment()">
@@ -239,8 +244,16 @@
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            amount: 36580,
+          const amount = document.getElementById("amount").value;
+
+      if (!amount || Number(amount) < 1000) {
+        alert("Minimal pembayaran Rp 1.000");
+        document.getElementById("loading").style.display = "none";
+        return;
+      }
+
+      body: JSON.stringify({
+            amount: Number(amount),
             invoice_number: "INV-" + Date.now(),
             customer_name: name,
             customer_email: email
