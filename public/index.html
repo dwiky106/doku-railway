@@ -223,60 +223,58 @@
     <p>Mohon tunggu sebentar</p>
   </div>
 
-  <script>
+<script>
 
-    async function createPayment() {
+async function createPayment() {
 
-      const name = document.getElementById("name").value;
-      const email = document.getElementById("email").value;
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const amount = document.getElementById("amount").value;
 
-      if (!name || !email) {
-        alert("Lengkapi data terlebih dahulu");
-        return;
-      }
+  if (!name || !email || !amount) {
+    alert("Lengkapi data terlebih dahulu");
+    return;
+  }
 
-      document.getElementById("loading").style.display = "flex";
+  if (Number(amount) < 1000) {
+    alert("Minimal pembayaran Rp 1.000");
+    return;
+  }
 
-      try {
+  document.getElementById("loading").style.display = "flex";
 
-        const response = await fetch("/createPayment", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          const amount = document.getElementById("amount").value;
+  try {
 
-      if (!amount || Number(amount) < 1000) {
-        alert("Minimal pembayaran Rp 1.000");
-        document.getElementById("loading").style.display = "none";
-        return;
-      }
-
+    const response = await fetch("/createPayment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
-            amount: Number(amount),
-            invoice_number: "INV-" + Date.now(),
-            customer_name: name,
-            customer_email: email
-          })
-        });
+        amount: Number(amount),
+        invoice_number: "INV-" + Date.now(),
+        customer_name: name,
+        customer_email: email
+      })
+    });
 
-        const result = await response.json();
+    const result = await response.json();
 
-        if (result.success) {
-          window.location.href = result.payment_url;
-        } else {
-          alert(result.message || "Gagal membuat pembayaran");
-        }
-
-      } catch (error) {
-        console.log(error);
-        alert("Terjadi kesalahan server");
-      }
-
-      document.getElementById("loading").style.display = "none";
+    if (result.success) {
+      window.location.href = result.payment_url;
+    } else {
+      alert(result.message || "Gagal membuat pembayaran");
     }
 
-  </script>
+  } catch (error) {
+    console.log(error);
+    alert("Terjadi kesalahan server");
+  }
+
+  document.getElementById("loading").style.display = "none";
+}
+
+</script>
 
 </body>
 </html>
