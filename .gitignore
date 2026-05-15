@@ -1,3 +1,5 @@
 node_modules
 .env
-*.json
+serviceAccountKey.json
+payment-sekartaji-firebase-adminsdk-fbsvc-20a4d3e904.json
+
