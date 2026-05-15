@@ -930,6 +930,255 @@ app.get(
   }
 );
 
+
+/*
+|--------------------------------------------------------------------------
+| CHECK PAYMENT STATUS FROM DOKU
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  "/check-status/:invoice",
+  async (req, res) => {
+
+    try {
+
+      const invoice =
+        req.params.invoice;
+
+      /*
+      |--------------------------------------------------------------------------
+      | DOKU STATUS URL
+      |--------------------------------------------------------------------------
+      */
+
+      const target =
+        `/orders/v1/status/${invoice}`;
+
+      const url =
+        `https://api.doku.com${target}`;
+
+      /*
+      |--------------------------------------------------------------------------
+      | REQUEST ID
+      |--------------------------------------------------------------------------
+      */
+
+      const requestId =
+        crypto.randomUUID();
+
+      /*
+      |--------------------------------------------------------------------------
+      | TIMESTAMP
+      |--------------------------------------------------------------------------
+      */
+
+      const timestamp =
+        new Date()
+        .toISOString()
+        .replace(/\.\d{3}Z$/, "Z");
+
+      /*
+      |--------------------------------------------------------------------------
+      | SIGNATURE COMPONENT
+      |--------------------------------------------------------------------------
+      */
+
+      const componentSignature =
+
+        `Client-Id:${CLIENT_ID}\n` +
+
+        `Request-Id:${requestId}\n` +
+
+        `Request-Timestamp:${timestamp}\n` +
+
+        `Request-Target:${target}`;
+
+      /*
+      |--------------------------------------------------------------------------
+      | SIGNATURE
+      |--------------------------------------------------------------------------
+      */
+
+      const signature =
+        crypto
+        .createHmac(
+          "sha256",
+          SECRET_KEY
+        )
+        .update(componentSignature)
+        .digest("base64");
+
+      /*
+      |--------------------------------------------------------------------------
+      | HEADERS
+      |--------------------------------------------------------------------------
+      */
+
+      const headers = {
+
+        "Client-Id":
+          CLIENT_ID,
+
+        "Request-Id":
+          requestId,
+
+        "Request-Timestamp":
+          timestamp,
+
+        Signature:
+          `HMACSHA256=${signature}`,
+      };
+
+      /*
+      |--------------------------------------------------------------------------
+      | REQUEST TO DOKU
+      |--------------------------------------------------------------------------
+      */
+
+      const response =
+        await axios.get(
+          url,
+          { headers }
+        );
+
+      console.log("");
+      console.log("==================================");
+      console.log("CHECK STATUS SUCCESS");
+      console.log("==================================");
+
+      console.log(
+        JSON.stringify(
+          response.data,
+          null,
+          2
+        )
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | GET STATUS
+      |--------------------------------------------------------------------------
+      */
+
+      const transactionStatus =
+
+        response.data?.transaction
+        ?.status ||
+
+        response.data?.status ||
+
+        "PENDING";
+
+      /*
+      |--------------------------------------------------------------------------
+      | FINAL STATUS
+      |--------------------------------------------------------------------------
+      */
+
+      let finalStatus =
+        "PENDING";
+
+      if (
+        transactionStatus === "SUCCESS" ||
+        transactionStatus === "PAID"
+      ) {
+
+        finalStatus = "PAID";
+      }
+
+      if (
+        transactionStatus === "FAILED"
+      ) {
+
+        finalStatus = "FAILED";
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | UPDATE FIRESTORE
+      |--------------------------------------------------------------------------
+      */
+
+      await db
+        .collection("transactions")
+        .doc(invoice)
+        .set({
+
+          status:
+            finalStatus,
+
+          doku_status:
+            transactionStatus,
+
+          check_status_response:
+            response.data,
+
+          updated_at:
+            admin.firestore
+            .FieldValue
+            .serverTimestamp(),
+
+        }, { merge: true });
+
+      /*
+      |--------------------------------------------------------------------------
+      | RESPONSE
+      |--------------------------------------------------------------------------
+      */
+
+      return res.status(200).json({
+
+        success: true,
+
+        status:
+          finalStatus,
+
+        doku_response:
+          response.data,
+      });
+
+    } catch (error) {
+
+      console.log("");
+      console.log("==================================");
+      console.log("CHECK STATUS ERROR");
+      console.log("==================================");
+
+      if (error.response) {
+
+        console.log(
+          JSON.stringify(
+            error.response.data,
+            null,
+            2
+          )
+        );
+
+        return res.status(
+          error.response.status
+        ).json({
+
+          success: false,
+
+          error:
+            error.response.data,
+        });
+      }
+
+      console.log(error);
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          error.message,
+      });
+    }
+  }
+);
+
 /*
 |--------------------------------------------------------------------------
 | ALL TRANSACTIONS
