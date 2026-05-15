@@ -1181,6 +1181,151 @@ app.get(
 
 /*
 |--------------------------------------------------------------------------
+| VALIDATE PAYMENT MANUAL
+|--------------------------------------------------------------------------
+*/
+
+app.post(
+  "/validate-payment/:invoice",
+  async (req, res) => {
+
+    try {
+
+      const invoice =
+        req.params.invoice;
+
+      console.log("");
+      console.log("==================================");
+      console.log("MANUAL VALIDATION");
+      console.log("==================================");
+
+      console.log(
+        "INVOICE:",
+        invoice
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | GET TRANSACTION
+      |--------------------------------------------------------------------------
+      */
+
+      const docRef =
+        db.collection("transactions")
+        .doc(invoice);
+
+      const docSnap =
+        await docRef.get();
+
+      if (!docSnap.exists) {
+
+        return res.status(404).json({
+
+          success: false,
+
+          message:
+            "Transaction not found",
+        });
+      }
+
+      const data =
+        docSnap.data();
+
+      /*
+      |--------------------------------------------------------------------------
+      | CHECK DOKU STATUS
+      |--------------------------------------------------------------------------
+      */
+
+      const dokuResponse =
+        data.doku_response;
+
+      /*
+      |--------------------------------------------------------------------------
+      | SIMULASI VALIDASI
+      |--------------------------------------------------------------------------
+      | Karena webhook kadang telat
+      |--------------------------------------------------------------------------
+      */
+
+      let finalStatus =
+        data.status || "PENDING";
+
+      /*
+      |--------------------------------------------------------------------------
+      | JIKA ADA PAYMENT URL
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        dokuResponse &&
+        dokuResponse.response
+      ) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | AUTO VALIDATE
+        |--------------------------------------------------------------------------
+        */
+
+        finalStatus = "PAID";
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | UPDATE FIRESTORE
+      |--------------------------------------------------------------------------
+      */
+
+      await docRef.set({
+
+        status:
+          finalStatus,
+
+        manual_validated:
+          true,
+
+        validated_at:
+          admin.firestore
+          .FieldValue
+          .serverTimestamp(),
+
+      }, { merge: true });
+
+      console.log("");
+      console.log(
+        "STATUS UPDATED:",
+        finalStatus
+      );
+
+      return res.status(200).json({
+
+        success: true,
+
+        invoice,
+
+        status:
+          finalStatus,
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      return res.status(500).json({
+
+        success: false,
+
+        message:
+          error.message,
+      });
+    }
+  }
+);
+
+
+/*
+|--------------------------------------------------------------------------
 | ALL TRANSACTIONS
 |--------------------------------------------------------------------------
 */
