@@ -81,31 +81,36 @@ app.post("/createPayment", async (req, res) => {
     */
 
     const requestBody = {
-      order: {
-        amount: Number(amount),
+  order: {
+    amount: Number(amount),
 
-        invoice_number: invoice_number,
+    invoice_number: invoice_number,
 
-        currency: "IDR",
+    currency: "IDR",
+  },
 
-        callback_url:
-          "https://doku-railway-production.up.railway.app/notification",
+  payment: {
+    payment_due_date: 60,
+  },
 
-        callback_url_result:
-          "https://doku-railway-production.up.railway.app",
+  customer: {
+    name: customer_name,
+    email: customer_email,
+  },
 
-        auto_redirect: false,
-      },
+  additional_info: {
+    callback_url:
+      "https://doku-railway-production.up.railway.app/notification",
 
-      payment: {
-        payment_due_date: 60,
-      },
+    callback_url_cancel:
+      "https://doku-railway-production.up.railway.app",
 
-      customer: {
-        name: customer_name,
-        email: customer_email,
-      },
-    };
+    callback_url_result:
+      "https://doku-railway-production.up.railway.app",
+
+    auto_redirect: false,
+  },
+};
 
     /*
     |--------------------------------------------------------------------------
