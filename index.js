@@ -234,18 +234,17 @@ app.post("/createPayment", async (req, res) => {
 
       additional_info: {
 
-        callback_url:
-          "https://doku-railway-production.up.railway.app/notification",
+  notification_url:
+    "https://doku-railway-production.up.railway.app/notification",
 
-        callback_url_result:
-          "https://doku-railway-production.up.railway.app",
+  callback_url:
+    "https://doku-railway-production.up.railway.app",
 
-        callback_url_cancel:
-          "https://doku-railway-production.up.railway.app",
+  callback_url_cancel:
+    "https://doku-railway-production.up.railway.app",
 
-        auto_redirect:
-          false,
-      },
+  auto_redirect: false,
+},
     };
 
     /*
