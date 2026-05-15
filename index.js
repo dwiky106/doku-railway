@@ -1279,6 +1279,277 @@ app.delete(
 
 /*
 |--------------------------------------------------------------------------
+| AUTO VALIDATE PENDING TRANSACTIONS
+|--------------------------------------------------------------------------
+*/
+
+async function autoValidatePayments() {
+
+  try {
+
+    console.log("");
+    console.log("==================================");
+    console.log("AUTO VALIDATE RUNNING");
+    console.log("==================================");
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET PENDING TRANSACTIONS
+    |--------------------------------------------------------------------------
+    */
+
+    const snapshot =
+      await db
+      .collection("transactions")
+      .where(
+        "status",
+        "==",
+        "PENDING"
+      )
+      .get();
+
+    if (snapshot.empty) {
+
+      console.log(
+        "NO PENDING TRANSACTIONS"
+      );
+
+      return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOOP TRANSACTIONS
+    |--------------------------------------------------------------------------
+    */
+
+    for (const doc of snapshot.docs) {
+
+      const data =
+        doc.data();
+
+      const invoice =
+        data.invoice_number;
+
+      console.log("");
+      console.log(
+        "CHECKING:",
+        invoice
+      );
+
+      try {
+
+        /*
+        |--------------------------------------------------------------------------
+        | DOKU STATUS URL
+        |--------------------------------------------------------------------------
+        */
+
+        const target =
+          `/orders/v1/status/${invoice}`;
+
+        const url =
+          `https://api.doku.com${target}`;
+
+        /*
+        |--------------------------------------------------------------------------
+        | REQUEST ID
+        |--------------------------------------------------------------------------
+        */
+
+        const requestId =
+          crypto.randomUUID();
+
+        /*
+        |--------------------------------------------------------------------------
+        | TIMESTAMP
+        |--------------------------------------------------------------------------
+        */
+
+        const timestamp =
+          new Date()
+          .toISOString()
+          .replace(
+            /\.\d{3}Z$/,
+            "Z"
+          );
+
+        /*
+        |--------------------------------------------------------------------------
+        | SIGNATURE
+        |--------------------------------------------------------------------------
+        */
+
+        const componentSignature =
+
+          `Client-Id:${CLIENT_ID}\n` +
+
+          `Request-Id:${requestId}\n` +
+
+          `Request-Timestamp:${timestamp}\n` +
+
+          `Request-Target:${target}`;
+
+        const signature =
+          crypto
+          .createHmac(
+            "sha256",
+            SECRET_KEY
+          )
+          .update(componentSignature)
+          .digest("base64");
+
+        /*
+        |--------------------------------------------------------------------------
+        | HEADERS
+        |--------------------------------------------------------------------------
+        */
+
+        const headers = {
+
+          "Client-Id":
+            CLIENT_ID,
+
+          "Request-Id":
+            requestId,
+
+          "Request-Timestamp":
+            timestamp,
+
+          Signature:
+            `HMACSHA256=${signature}`,
+        };
+
+        /*
+        |--------------------------------------------------------------------------
+        | REQUEST TO DOKU
+        |--------------------------------------------------------------------------
+        */
+
+        const response =
+          await axios.get(
+            url,
+            { headers }
+          );
+
+        console.log(
+          JSON.stringify(
+            response.data,
+            null,
+            2
+          )
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | GET STATUS
+        |--------------------------------------------------------------------------
+        */
+
+        const transactionStatus =
+
+          response.data?.transaction
+          ?.status ||
+
+          response.data?.status ||
+
+          "PENDING";
+
+        /*
+        |--------------------------------------------------------------------------
+        | FINAL STATUS
+        |--------------------------------------------------------------------------
+        */
+
+        let finalStatus =
+          "PENDING";
+
+        if (
+          transactionStatus ===
+          "SUCCESS"
+        ) {
+
+          finalStatus = "PAID";
+        }
+
+        if (
+          transactionStatus ===
+          "FAILED"
+        ) {
+
+          finalStatus = "FAILED";
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE FIRESTORE
+        |--------------------------------------------------------------------------
+        */
+
+        await db
+          .collection(
+            "transactions"
+          )
+          .doc(invoice)
+          .set({
+
+            status:
+              finalStatus,
+
+            doku_status:
+              transactionStatus,
+
+            auto_checked:
+              true,
+
+            updated_at:
+              admin.firestore
+              .FieldValue
+              .serverTimestamp(),
+
+          }, { merge: true });
+
+        console.log(
+          "UPDATED:",
+          invoice,
+          finalStatus
+        );
+
+      } catch (err) {
+
+        console.log(
+          "CHECK ERROR:",
+          invoice
+        );
+
+        console.log(err.message);
+      }
+    }
+
+  } catch (error) {
+
+    console.log(
+      "AUTO VALIDATE ERROR"
+    );
+
+    console.log(error);
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| AUTO RUN EVERY 10 SECONDS
+|--------------------------------------------------------------------------
+*/
+
+setInterval(() => {
+
+  autoValidatePayments();
+
+}, 10000);
+
+/*
+|--------------------------------------------------------------------------
 | PORT
 |--------------------------------------------------------------------------
 */
