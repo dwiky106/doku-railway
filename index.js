@@ -299,6 +299,103 @@ app.post("/createPayment", async (req, res) => {
   }
 });
 
+
+/*
+|--------------------------------------------------------------------------
+| DOKU WEBHOOK
+|--------------------------------------------------------------------------
+*/
+
+app.post("/notification", async (req, res) => {
+  try {
+
+    console.log("==================================");
+    console.log("DOKU WEBHOOK");
+    console.log("==================================");
+
+    console.log(JSON.stringify(req.body, null, 2));
+
+    const body = req.body;
+
+    /*
+    |--------------------------------------------------------------------------
+    | AMBIL DATA
+    |--------------------------------------------------------------------------
+    */
+
+    const invoiceNumber =
+      body?.order?.invoice_number;
+
+    const transactionStatus =
+      body?.transaction?.status;
+
+    const amount =
+      body?.order?.amount;
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDASI
+    |--------------------------------------------------------------------------
+    */
+
+    if (!invoiceNumber) {
+      return res.status(400).json({
+        success: false,
+        message: "Invoice number kosong",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE FIRESTORE
+    |--------------------------------------------------------------------------
+    */
+
+    await db
+      .collection("transactions")
+      .doc(invoiceNumber)
+      .update({
+        transaction_status:
+          transactionStatus || "UNKNOWN",
+
+        paid_amount: amount || 0,
+
+        webhook_response: body,
+
+        updated_at:
+          admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+    console.log("==================================");
+    console.log("FIRESTORE UPDATED");
+    console.log("==================================");
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUCCESS RESPONSE
+    |--------------------------------------------------------------------------
+    */
+
+    return res.status(200).json({
+      success: true,
+    });
+
+  } catch (error) {
+
+    console.log("==================================");
+    console.log("WEBHOOK ERROR");
+    console.log("==================================");
+
+    console.log(error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+
 /*
 |--------------------------------------------------------------------------
 | PORT
