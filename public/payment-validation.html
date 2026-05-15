@@ -15,141 +15,354 @@
 
   <style>
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:Arial,sans-serif;
     }
 
-    body {
-      background: #f4f6f9;
-      padding: 20px;
+    body{
+      background:#f3f4f6;
+      padding:16px;
     }
 
-    .container {
-      max-width: 1400px;
-      margin: auto;
+    .container{
+      max-width:1600px;
+      margin:auto;
     }
 
-    h1 {
-      margin-bottom: 20px;
-      color: #222;
+    h1{
+      font-size:32px;
+      margin-bottom:20px;
+      color:#111827;
     }
 
-    .table-wrapper {
-      overflow-x: auto;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH AREA
+    |--------------------------------------------------------------------------
+    */
+
+    .search-area{
+
+      background:white;
+
+      padding:20px;
+
+      border-radius:16px;
+
+      margin-bottom:20px;
+
+      box-shadow:0 2px 10px rgba(0,0,0,0.08);
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .search-title{
+      font-size:20px;
+      font-weight:bold;
+      margin-bottom:16px;
     }
 
-    th {
-      background: #111827;
-      color: white;
-      padding: 14px;
-      text-align: left;
-      font-size: 14px;
+    .search-input{
+
+      width:100%;
+
+      padding:16px;
+
+      border:1px solid #ddd;
+
+      border-radius:12px;
+
+      font-size:16px;
     }
 
-    td {
-      padding: 14px;
-      border-bottom: 1px solid #eee;
-      font-size: 14px;
+    .search-info{
+
+      margin-top:12px;
+
+      color:#666;
+
+      font-size:14px;
     }
 
-    tr:hover {
-      background: #f9fafb;
+    /*
+    |--------------------------------------------------------------------------
+    | TABLE
+    |--------------------------------------------------------------------------
+    */
+
+    .table-wrapper{
+
+      overflow-x:auto;
+
+      background:white;
+
+      border-radius:16px;
+
+      box-shadow:0 2px 10px rgba(0,0,0,0.08);
     }
 
-    .badge {
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: bold;
-      display: inline-block;
+    table{
+
+      width:100%;
+
+      border-collapse:collapse;
+
+      min-width:1000px;
     }
 
-    .paid {
-      background: #dcfce7;
-      color: #166534;
+    th{
+
+      background:#111827;
+
+      color:white;
+
+      padding:16px;
+
+      text-align:left;
+
+      font-size:14px;
     }
 
-    .pending {
-      background: #fef9c3;
-      color: #854d0e;
+    td{
+
+      padding:18px 16px;
+
+      border-bottom:1px solid #eee;
+
+      font-size:14px;
+
+      vertical-align:middle;
     }
 
-    .failed {
-      background: #fee2e2;
-      color: #991b1b;
+    tr:hover{
+      background:#f9fafb;
     }
 
-    .expired {
-      background: #e5e7eb;
-      color: #111827;
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    .badge{
+
+      padding:8px 14px;
+
+      border-radius:999px;
+
+      font-size:12px;
+
+      font-weight:bold;
+
+      display:inline-block;
     }
 
-    button {
-      border: none;
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
+    .paid{
+      background:#dcfce7;
+      color:#166534;
     }
 
-    .detail-btn {
-      background: #2563eb;
-      color: white;
+    .pending{
+      background:#fef3c7;
+      color:#92400e;
     }
 
-    .validate-btn {
-      background: #16a34a;
-      color: white;
-      margin-left: 8px;
+    .failed{
+      background:#fee2e2;
+      color:#991b1b;
     }
 
-    .loading {
-      text-align: center;
-      padding: 30px;
-      color: #666;
+    .expired{
+      background:#e5e7eb;
+      color:#111827;
     }
 
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
+    /*
+    |--------------------------------------------------------------------------
+    | BUTTON
+    |--------------------------------------------------------------------------
+    */
+
+    .action-group{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
     }
 
-    .modal-content {
-      width: 90%;
-      max-width: 800px;
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      max-height: 90vh;
-      overflow-y: auto;
+    button{
+
+      border:none;
+
+      padding:10px 16px;
+
+      border-radius:10px;
+
+      cursor:pointer;
+
+      font-weight:bold;
+
+      color:white;
     }
 
-    pre {
-      background: #111827;
-      color: white;
-      padding: 16px;
-      border-radius: 10px;
-      overflow-x: auto;
-      margin-top: 16px;
+    .detail-btn{
+      background:#2563eb;
+    }
+
+    .validate-btn{
+      background:#16a34a;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PAGINATION
+    |--------------------------------------------------------------------------
+    */
+
+    .pagination{
+
+      display:flex;
+
+      justify-content:center;
+
+      align-items:center;
+
+      gap:8px;
+
+      padding:24px;
+
+      flex-wrap:wrap;
+    }
+
+    .page-btn{
+
+      min-width:42px;
+
+      height:42px;
+
+      border:none;
+
+      border-radius:10px;
+
+      background:white;
+
+      cursor:pointer;
+
+      font-weight:bold;
+
+      box-shadow:0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .page-btn.active{
+
+      background:#111827;
+
+      color:white;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | MODAL
+    |--------------------------------------------------------------------------
+    */
+
+    .modal{
+
+      position:fixed;
+
+      top:0;
+      left:0;
+
+      width:100%;
+      height:100%;
+
+      background:rgba(0,0,0,0.5);
+
+      display:none;
+
+      align-items:center;
+
+      justify-content:center;
+
+      padding:20px;
+
+      z-index:999;
+    }
+
+    .modal-content{
+
+      background:white;
+
+      width:100%;
+
+      max-width:900px;
+
+      border-radius:16px;
+
+      padding:24px;
+
+      max-height:90vh;
+
+      overflow-y:auto;
+    }
+
+    pre{
+
+      background:#111827;
+
+      color:white;
+
+      padding:16px;
+
+      border-radius:12px;
+
+      overflow-x:auto;
+
+      margin-top:20px;
+
+      font-size:13px;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | MOBILE
+    |--------------------------------------------------------------------------
+    */
+
+    @media(max-width:768px){
+
+      body{
+        padding:10px;
+      }
+
+      h1{
+        font-size:24px;
+      }
+
+      .search-area{
+        padding:16px;
+      }
+
+      .search-input{
+        padding:14px;
+        font-size:14px;
+      }
+
+      td{
+        font-size:13px;
+      }
+
+      th{
+        font-size:13px;
+      }
+
+      button{
+        width:100%;
+      }
+
+      .action-group{
+        flex-direction:column;
+      }
     }
 
   </style>
@@ -162,6 +375,29 @@
     <h1>
       Payment Validation Dashboard
     </h1>
+
+    <!-- SEARCH AREA -->
+
+    <div class="search-area">
+
+      <div class="search-title">
+        Search Transactions
+      </div>
+
+      <input
+        type="text"
+        id="searchInput"
+        class="search-input"
+        placeholder="Search by name, email, or invoice..."
+      />
+
+      <div class="search-info">
+        Search hanya memfilter tampilan tanpa menghapus transaksi asli.
+      </div>
+
+    </div>
+
+    <!-- TABLE -->
 
     <div class="table-wrapper">
 
@@ -182,21 +418,27 @@
 
         <tbody id="tableBody">
 
-          <tr>
-            <td colspan="6" class="loading">
-              Loading...
-            </td>
-          </tr>
-
         </tbody>
 
       </table>
 
     </div>
 
+    <!-- PAGINATION -->
+
+    <div
+      class="pagination"
+      id="pagination"
+    ></div>
+
   </div>
 
-  <div class="modal" id="modal">
+  <!-- MODAL -->
+
+  <div
+    class="modal"
+    id="modal"
+  >
 
     <div class="modal-content">
 
@@ -226,9 +468,33 @@
         "tableBody"
       );
 
-    async function loadTransactions() {
+    const pagination =
+      document.getElementById(
+        "pagination"
+      );
 
-      try {
+    const searchInput =
+      document.getElementById(
+        "searchInput"
+      );
+
+    let allTransactions = [];
+
+    let filteredTransactions = [];
+
+    let currentPage = 1;
+
+    const rowsPerPage = 50;
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOAD TRANSACTIONS
+    |--------------------------------------------------------------------------
+    */
+
+    async function loadTransactions(){
+
+      try{
 
         const response =
           await fetch(
@@ -238,76 +504,141 @@
         const result =
           await response.json();
 
-        const transactions =
+        allTransactions =
           result.data || [];
 
-        if (
-          transactions.length === 0
-        ) {
+        applySearch();
 
-          tableBody.innerHTML = `
-            <tr>
-              <td colspan="6" class="loading">
-                Tidak ada transaksi
-              </td>
-            </tr>
-          `;
+      }catch(error){
 
-          return;
+        console.log(error);
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
+    function applySearch(){
+
+      const keyword =
+        searchInput.value
+        .toLowerCase();
+
+      filteredTransactions =
+        allTransactions.filter((item)=>{
+
+          return (
+
+            (item.customer_name || "")
+            .toLowerCase()
+            .includes(keyword)
+
+            ||
+
+            (item.customer_email || "")
+            .toLowerCase()
+            .includes(keyword)
+
+            ||
+
+            (item.invoice_number || "")
+            .toLowerCase()
+            .includes(keyword)
+
+          );
+        });
+
+      currentPage = 1;
+
+      renderTable();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | RENDER TABLE
+    |--------------------------------------------------------------------------
+    */
+
+    function renderTable(){
+
+      tableBody.innerHTML = "";
+
+      const start =
+        (currentPage - 1)
+        * rowsPerPage;
+
+      const end =
+        start + rowsPerPage;
+
+      const currentData =
+        filteredTransactions.slice(
+          start,
+          end
+        );
+
+      if(currentData.length === 0){
+
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="6">
+              Tidak ada transaksi
+            </td>
+          </tr>
+        `;
+
+        return;
+      }
+
+      currentData.forEach((item)=>{
+
+        let badgeClass =
+          "pending";
+
+        if(item.status === "PAID"){
+          badgeClass = "paid";
         }
 
-        tableBody.innerHTML = "";
+        if(item.status === "FAILED"){
+          badgeClass = "failed";
+        }
 
-        transactions.forEach((item) => {
+        if(item.status === "EXPIRED"){
+          badgeClass = "expired";
+        }
 
-          let badgeClass =
-            "pending";
+        tableBody.innerHTML += `
 
-          if (
-            item.status === "PAID"
-          ) {
-            badgeClass = "paid";
-          }
+          <tr>
 
-          if (
-            item.status === "FAILED"
-          ) {
-            badgeClass = "failed";
-          }
+            <td>
+              ${item.customer_name || '-'}
+            </td>
 
-          if (
-            item.status === "EXPIRED"
-          ) {
-            badgeClass = "expired";
-          }
+            <td>
+              ${item.customer_email || '-'}
+            </td>
 
-          tableBody.innerHTML += `
+            <td>
+              Rp ${Number(item.amount || 0)
+              .toLocaleString('id-ID')}
+            </td>
 
-            <tr>
+            <td>
+              ${item.invoice_number || '-'}
+            </td>
 
-              <td>
-                ${item.customer_name || '-'}
-              </td>
+            <td>
+              <span class="badge ${badgeClass}">
+                ${item.status || 'PENDING'}
+              </span>
+            </td>
 
-              <td>
-                ${item.customer_email || '-'}
-              </td>
+            <td>
 
-              <td>
-                Rp ${Number(item.amount || 0).toLocaleString('id-ID')}
-              </td>
-
-              <td>
-                ${item.invoice_number || '-'}
-              </td>
-
-              <td>
-                <span class="badge ${badgeClass}">
-                  ${item.status || 'PENDING'}
-                </span>
-              </td>
-
-              <td>
+              <div class="action-group">
 
                 <button
                   class="detail-btn"
@@ -323,35 +654,153 @@
                   Validate
                 </button>
 
-              </td>
+              </div>
 
-            </tr>
-          `;
-        });
+            </td>
 
-      } catch (error) {
+          </tr>
+        `;
+      });
 
-        console.log(error);
-      }
+      renderPagination();
     }
 
-    async function validatePayment(invoice) {
+    /*
+    |--------------------------------------------------------------------------
+    | PAGINATION
+    |--------------------------------------------------------------------------
+    */
 
-      try {
+    function renderPagination(){
+
+      pagination.innerHTML = "";
+
+      const totalPages =
+        Math.ceil(
+          filteredTransactions.length
+          / rowsPerPage
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | PREV
+      |--------------------------------------------------------------------------
+      */
+
+      const prevBtn =
+        document.createElement("button");
+
+      prevBtn.innerHTML = "&lt;";
+
+      prevBtn.className =
+        "page-btn";
+
+      prevBtn.onclick = ()=>{
+
+        if(currentPage > 1){
+
+          currentPage--;
+
+          renderTable();
+        }
+      };
+
+      pagination.appendChild(prevBtn);
+
+      /*
+      |--------------------------------------------------------------------------
+      | PAGE NUMBER
+      |--------------------------------------------------------------------------
+      */
+
+      for(
+        let i = 1;
+        i <= totalPages;
+        i++
+      ){
+
+        const btn =
+          document.createElement(
+            "button"
+          );
+
+        btn.innerText = i;
+
+        btn.className =
+          "page-btn";
+
+        if(i === currentPage){
+
+          btn.classList.add(
+            "active"
+          );
+        }
+
+        btn.onclick = ()=>{
+
+          currentPage = i;
+
+          renderTable();
+        };
+
+        pagination.appendChild(btn);
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | NEXT
+      |--------------------------------------------------------------------------
+      */
+
+      const nextBtn =
+        document.createElement("button");
+
+      nextBtn.innerHTML = "&gt;";
+
+      nextBtn.className =
+        "page-btn";
+
+      nextBtn.onclick = ()=>{
+
+        if(
+          currentPage <
+          totalPages
+        ){
+
+          currentPage++;
+
+          renderTable();
+        }
+      };
+
+      pagination.appendChild(nextBtn);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE PAYMENT
+    |--------------------------------------------------------------------------
+    */
+
+    async function validatePayment(invoice){
+
+      try{
 
         const button =
           event.target;
 
         button.innerHTML =
-          'Checking...';
+          "Checking...";
 
         button.disabled = true;
 
         const response =
           await fetch(
+
             `${API_BASE}/validate-payment/${invoice}`,
+
             {
-              method: 'POST'
+              method:"POST"
             }
           );
 
@@ -362,33 +811,35 @@
 
         await loadTransactions();
 
-        alert(
-          'Validation success'
-        );
-
         button.innerHTML =
-          'Validate';
+          "Validate";
 
         button.disabled = false;
 
-      } catch (error) {
+      }catch(error){
 
         console.log(error);
 
         alert(
-          'Validation failed'
+          "Validation failed"
         );
       }
     }
 
-    function showDetail(data) {
+    /*
+    |--------------------------------------------------------------------------
+    | DETAIL MODAL
+    |--------------------------------------------------------------------------
+    */
+
+    function showDetail(data){
 
       document.getElementById(
-        'modal'
-      ).style.display = 'flex';
+        "modal"
+      ).style.display = "flex";
 
       document.getElementById(
-        'detailContent'
+        "detailContent"
       ).innerHTML = JSON.stringify(
         data,
         null,
@@ -396,29 +847,41 @@
       );
     }
 
-    function closeModal() {
+    function closeModal(){
 
       document.getElementById(
-        'modal'
-      ).style.display = 'none';
+        "modal"
+      ).style.display = "none";
     }
 
     /*
     |--------------------------------------------------------------------------
-    | AUTO REFRESH SETIAP 1 DETIK
+    | SEARCH EVENT
+    |--------------------------------------------------------------------------
+    */
+
+    searchInput.addEventListener(
+
+      "keyup",
+
+      applySearch
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | AUTO REFRESH
     |--------------------------------------------------------------------------
     */
 
     loadTransactions();
 
-    setInterval(() => {
+    setInterval(()=>{
 
       loadTransactions();
 
-    }, 1000);
+    },1000);
 
   </script>
 
 </body>
 </html>
-
